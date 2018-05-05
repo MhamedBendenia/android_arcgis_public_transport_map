@@ -186,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
 
-                // create RouteTask instance
                 RouteTask mRouteTask = new RouteTask(getApplicationContext(),Environment.getExternalStorageDirectory() + getString(R.string.config_data_sdcard_offline_dir)
                         + getString(R.string.config_geodb_name), "test_test_ND");
 
@@ -282,26 +281,24 @@ public class MainActivity extends AppCompatActivity {
         final Geodatabase geodatabase = new Geodatabase(path);
         // load the geodatabase
         geodatabase.loadAsync();
-        Log.e(TAG, geodatabase.getLoadStatus()+"....................................................................................");
-        // create feature layer from geodatabase and add to the map
         geodatabase.addDoneLoadingListener(() -> {
             if (geodatabase.getLoadStatus() == LoadStatus.LOADED) {
-                // access the geodatabase's feature table Trailheads
-                GeodatabaseFeatureTable geodatabaseFeatureTable = geodatabase.getGeodatabaseFeatureTable("");
-                geodatabaseFeatureTable.loadAsync();
-                // create a layer from the geodatabase feature table and add to map
-                final FeatureLayer featureLayer = new FeatureLayer(geodatabaseFeatureTable);
-                featureLayer.addDoneLoadingListener(() -> {
-                    if (featureLayer.getLoadStatus() == LoadStatus.LOADED) {
-                        // set viewpoint to the feature layer's extent
-                        mMapView.setViewpointAsync(new Viewpoint(featureLayer.getFullExtent()));
-                    } else {
-                        Toast.makeText(MainActivity.this, "Feature Layer failed to load!", Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Feature Layer failed to load!");
-                    }
-                });
-                // add feature layer to the map
-                mMapView.getMap().getOperationalLayers().add(featureLayer);
+
+
+                FeatureLayer featureLayer =null;
+                for(int i=1;geodatabase.getGeodatabaseFeatureTableByServiceLayerId(i)!=null;i++) {
+                    // access the geodatabase's feature table Trailheads
+                    GeodatabaseFeatureTable geodatabaseFeatureTable = geodatabase.getGeodatabaseFeatureTable(geodatabase.getGeodatabaseFeatureTableByServiceLayerId(i).getTableName());
+                    geodatabaseFeatureTable.loadAsync();
+                    // create a layer from the geodatabase feature table and add to map
+                    featureLayer = new FeatureLayer(geodatabaseFeatureTable);
+
+                    // add feature layer to the map
+                    mMapView.getMap().getOperationalLayers().add(featureLayer);
+                }
+
+
+
             } else {
                 Toast.makeText(MainActivity.this, "Geodatabase failed to load!", Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Geodatabase failed to load!");
