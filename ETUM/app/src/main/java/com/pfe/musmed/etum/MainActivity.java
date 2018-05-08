@@ -2,13 +2,10 @@ package com.pfe.musmed.etum;
 
 import android.Manifest;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Environment;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -23,6 +20,7 @@ import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.Toast;
+
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Geodatabase;
 import com.esri.arcgisruntime.data.GeodatabaseFeatureTable;
@@ -46,6 +44,7 @@ import com.esri.arcgisruntime.tasks.networkanalysis.RouteParameters;
 import com.esri.arcgisruntime.tasks.networkanalysis.RouteResult;
 import com.esri.arcgisruntime.tasks.networkanalysis.RouteTask;
 import com.esri.arcgisruntime.tasks.networkanalysis.Stop;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -59,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
     MapView mMapView;
     private LocationDisplay mLocationDisplay;
     private ProgressDialog mProgressDialog;
-    private RouteParameters mRouteParams;
     private Point mSourcePoint;
     private Point mDestinationPoint;
     private Route mRoute;
@@ -70,13 +68,13 @@ public class MainActivity extends AppCompatActivity {
     private ListView mDrawerList;
 
     @Override
-    protected void onPause(){
+    protected void onPause() {
         mMapView.pause();
         super.onPause();
     }
 
     @Override
-    protected void onResume(){
+    protected void onResume() {
         super.onResume();
         mMapView.resume();
     }
@@ -176,17 +174,10 @@ public class MainActivity extends AppCompatActivity {
         mDirectionFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 mProgressDialog.show();
-
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                    getSupportActionBar().setHomeButtonEnabled(true);
-                    setTitle(getString(R.string.app_name));
-                }
                 mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
 
-                RouteTask mRouteTask = new RouteTask(getApplicationContext(),Environment.getExternalStorageDirectory() + getString(R.string.config_data_sdcard_offline_dir)
+                RouteTask mRouteTask = new RouteTask(getApplicationContext(), Environment.getExternalStorageDirectory() + getString(R.string.config_data_sdcard_offline_dir)
                         + getString(R.string.config_geodb_name), "test_test_ND");
 
                 final ListenableFuture<RouteParameters> listenableFuture = mRouteTask.createDefaultParametersAsync();
@@ -196,11 +187,19 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             if (listenableFuture.isDone()) {
                                 int i = 0;
-                                mRouteParams = listenableFuture.get();
+                                RouteParameters mRouteParams = new RouteParameters();
+                                try {
+                                    mRouteParams = listenableFuture.get();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } catch (ExecutionException e) {
+                                    e.printStackTrace();
+                                }
 
                                 // create stops
-                                Stop stop1 = new Stop(new Point(35.931488, 0.092265, SpatialReferences.getWgs84()));
-                                Stop stop2 = new Stop(new Point(35.933488, 0.093265, SpatialReferences.getWgs84()));
+                                Stop stop1 = new Stop(new Point(35.900842, 0.120087, SpatialReferences.getWgs84()));
+                                Stop stop2 = new Stop(new Point(35.931941, 0.091430, SpatialReferences.getWgs84()));
+
 
                                 List<Stop> routeStops = new ArrayList<>();
                                 // add stops
@@ -213,7 +212,11 @@ public class MainActivity extends AppCompatActivity {
                                 mRouteParams.setReturnDirections(true);
 
                                 // solve
+                                Log.e(TAG, "AAAAAAAAAAAAAAAAAAAAAAAAAA");
                                 RouteResult result = mRouteTask.solveRouteAsync(mRouteParams).get();
+                                Log.e(TAG, "BBBBBBBBBBBBBBBBBBBBBBBBBB");
+
+
                                 final List routes = result.getRoutes();
                                 mRoute = (Route) routes.get(0);
                                 // create a mRouteSymbol graphic
@@ -266,13 +269,10 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
-
-
     }
 
+
     private void loadGeodatabase() {
-
-
         String path =
                 Environment.getExternalStorageDirectory() + getString(R.string.config_data_sdcard_offline_dir)
                         + getString(R.string.config_geodb_name);
@@ -284,9 +284,8 @@ public class MainActivity extends AppCompatActivity {
         geodatabase.addDoneLoadingListener(() -> {
             if (geodatabase.getLoadStatus() == LoadStatus.LOADED) {
 
-
-                FeatureLayer featureLayer =null;
-                for(int i=1;geodatabase.getGeodatabaseFeatureTableByServiceLayerId(i)!=null;i++) {
+                FeatureLayer featureLayer = null;
+                for (int i = 0; geodatabase.getGeodatabaseFeatureTableByServiceLayerId(i) != null; i++) {
                     // access the geodatabase's feature table Trailheads
                     GeodatabaseFeatureTable geodatabaseFeatureTable = geodatabase.getGeodatabaseFeatureTable(geodatabase.getGeodatabaseFeatureTableByServiceLayerId(i).getTableName());
                     geodatabaseFeatureTable.loadAsync();
@@ -296,16 +295,12 @@ public class MainActivity extends AppCompatActivity {
                     // add feature layer to the map
                     mMapView.getMap().getOperationalLayers().add(featureLayer);
                 }
-
-
-
             } else {
                 Toast.makeText(MainActivity.this, "Geodatabase failed to load!", Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Geodatabase failed to load!");
             }
         });
     }
-
 
 
     private void setupDrawer() {
@@ -349,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     //add a new graphic as start point
-                    mSourcePoint = new Point(-117.15083257944445, 32.741123367963446, SpatialReferences.getWgs84());
+                    mSourcePoint = new Point(0.120087, 35.900842, SpatialReferences.getWgs84());
                     Graphic pinSourceGraphic = new Graphic(mSourcePoint, pinSourceSymbol);
                     mGraphicsOverlay.getGraphics().add(pinSourceGraphic);
                 }
@@ -370,7 +365,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     //add a new graphic as end point
-                    mDestinationPoint = new Point(-117.15557279683529, 32.703360305883045, SpatialReferences.getWgs84());
+                    mDestinationPoint = new Point(0.091430, 35.931941, SpatialReferences.getWgs84());
                     Graphic destinationGraphic = new Graphic(mDestinationPoint, pinDestinationSymbol);
                     mGraphicsOverlay.getGraphics().add(destinationGraphic);
                 }
