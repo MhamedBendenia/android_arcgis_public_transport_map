@@ -21,12 +21,14 @@ import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.data.Geodatabase;
 import com.esri.arcgisruntime.data.GeodatabaseFeatureTable;
 import com.esri.arcgisruntime.geometry.Geometry;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
+import com.esri.arcgisruntime.internal.jni.CoreRouteResult;
 import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.loadable.LoadStatus;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
@@ -197,8 +199,8 @@ public class MainActivity extends AppCompatActivity {
                                 }
 
                                 // create stops
-                                Stop stop1 = new Stop(new Point(35.900842, 0.120087, SpatialReferences.getWgs84()));
-                                Stop stop2 = new Stop(new Point(35.931941, 0.091430, SpatialReferences.getWgs84()));
+                                Stop stop1 = new Stop(new Point(0.120087, 35.900842, SpatialReferences.getWgs84()));
+                                Stop stop2 = new Stop(new Point(0.091430, 35.931941, SpatialReferences.getWgs84()));
 
 
                                 List<Stop> routeStops = new ArrayList<>();
@@ -206,10 +208,12 @@ public class MainActivity extends AppCompatActivity {
                                 routeStops.add(stop1);
                                 routeStops.add(stop2);
                                 mRouteParams.setStops(routeStops);
-
                                 // set return directions as true to return turn-by-turn directions in the result of
                                 // getDirectionManeuvers().
                                 mRouteParams.setReturnDirections(true);
+
+
+
 
                                 // solve
                                 Log.e(TAG, "AAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -273,12 +277,10 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadGeodatabase() {
-        String path =
-                Environment.getExternalStorageDirectory() + getString(R.string.config_data_sdcard_offline_dir)
-                        + getString(R.string.config_geodb_name);
 
         // create a new geodatabase from local path
-        final Geodatabase geodatabase = new Geodatabase(path);
+        final Geodatabase geodatabase = new Geodatabase(Environment.getExternalStorageDirectory() + getString(R.string.config_data_sdcard_offline_dir)
+                + getString(R.string.config_geodb_name));
         // load the geodatabase
         geodatabase.loadAsync();
         geodatabase.addDoneLoadingListener(() -> {
