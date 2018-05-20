@@ -16,26 +16,19 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.esri.arcgisruntime.concurrent.ListenableFuture;
-import com.esri.arcgisruntime.data.Feature;
-import com.esri.arcgisruntime.data.FeatureQueryResult;
 import com.esri.arcgisruntime.data.Geodatabase;
 import com.esri.arcgisruntime.data.GeodatabaseFeatureTable;
-import com.esri.arcgisruntime.data.QueryParameters;
-import com.esri.arcgisruntime.geometry.Envelope;
 import com.esri.arcgisruntime.geometry.Geometry;
 import com.esri.arcgisruntime.geometry.GeometryEngine;
 import com.esri.arcgisruntime.geometry.Point;
-import com.esri.arcgisruntime.geometry.SpatialReference;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.layers.FeatureLayer;
 import com.esri.arcgisruntime.loadable.LoadStatus;
@@ -49,7 +42,6 @@ import com.esri.arcgisruntime.mapping.view.LocationDisplay;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.PictureMarkerSymbol;
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol;
-import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import com.esri.arcgisruntime.tasks.networkanalysis.DirectionManeuver;
 import com.esri.arcgisruntime.tasks.networkanalysis.Route;
 import com.esri.arcgisruntime.tasks.networkanalysis.RouteParameters;
@@ -58,9 +50,7 @@ import com.esri.arcgisruntime.tasks.networkanalysis.RouteTask;
 import com.esri.arcgisruntime.tasks.networkanalysis.Stop;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static android.view.View.*;
@@ -124,10 +114,88 @@ public class MainActivity extends AppCompatActivity {
                     mMapView.getMap().getOperationalLayers().add(featureLayer);
                 }
             } else {
-                Toast.makeText(MainActivity.this, "Geodatabase failed to load!", Toast.LENGTH_LONG).show();
-                Log.e(TAG, "Geodatabase failed to load!");
+                Toast.makeText(MainActivity.this, "Impossible de charger la base de données.", Toast.LENGTH_LONG).show();
+
             }
         });
+    }
+
+    private void setupSymbols() {
+
+        mGraphicsOverlay = new GraphicsOverlay();
+
+        //add the overlay to the map view
+        mMapView.getGraphicsOverlays().add(mGraphicsOverlay);
+
+        if (routeStops.size() == 1) {
+            BitmapDrawable startDrawable = (BitmapDrawable) ContextCompat.getDrawable(this, R.drawable.ic_source);
+            final PictureMarkerSymbol pinSourceSymbol;
+            try {
+                pinSourceSymbol = PictureMarkerSymbol.createAsync(startDrawable).get();
+                pinSourceSymbol.loadAsync();
+                pinSourceSymbol.addDoneLoadingListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        //add a new graphic as start point
+                        mSourcePoint = new Point(routeStops.get(0).getGeometry().getX(), routeStops.get(0).getGeometry().getY(), SpatialReferences.getWgs84());
+                        Graphic pinSourceGraphic = new Graphic(mSourcePoint, pinSourceSymbol);
+                        mGraphicsOverlay.getGraphics().add(pinSourceGraphic);
+                    }
+                });
+                pinSourceSymbol.setOffsetY(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            Toast.makeText(MainActivity.this, "Taper pour definir un point de destination.", Toast.LENGTH_LONG).show();
+        } else if (routeStops.size() == 2) {
+
+
+            BitmapDrawable endDrawable = (BitmapDrawable) ContextCompat.getDrawable(this, R.drawable.ic_destination);
+            final PictureMarkerSymbol pinDestinationSymbol;
+            try {
+                pinDestinationSymbol = PictureMarkerSymbol.createAsync(endDrawable).get();
+                pinDestinationSymbol.loadAsync();
+                pinDestinationSymbol.addDoneLoadingListener(new Runnable() {
+                    @Override
+                    public void run() {
+                        //add a new graphic as end point
+                        mDestinationPoint = new Point(routeStops.get(1).getGeometry().getX(), routeStops.get(1).getGeometry().getY(), SpatialReferences.getWgs84());
+                        Graphic destinationGraphic = new Graphic(mDestinationPoint, pinDestinationSymbol);
+                        mGraphicsOverlay.getGraphics().add(destinationGraphic);
+                    }
+                });
+                pinDestinationSymbol.setOffsetY(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            Toast.makeText(MainActivity.this, "Cliquez sur le bouton en bas a droite pour calculer l'itinéraire.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void setupDrawer() {
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.drawer_open, R.string.drawer_close) {
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
+                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+        };
+
+        mDrawerToggle.setDrawerIndicatorEnabled(true);
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+
+        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -179,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     // Report other unknown failure types to the user - for example, location services may not
                     // be enabled on the device.
-                    String message = String.format("Error in DataSourceStatusChangedListener: %s", dataSourceStatusChangedEvent
+                    String message = String.format("Erreur dans la source de données: %s", dataSourceStatusChangedEvent
                             .getSource().getLocationDataSource().getError().getMessage());
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
 
@@ -212,7 +280,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setTitle(getString(R.string.progress_title));
         mProgressDialog.setMessage(getString(R.string.progress_message));
@@ -222,26 +289,23 @@ public class MainActivity extends AppCompatActivity {
                 + getString(R.string.config_geodb_name), "test_test_ND");
 
 
-
+        Toast.makeText(MainActivity.this, "Tapez pour definir un point de depart.", Toast.LENGTH_LONG).show();
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
             public boolean onSingleTapConfirmed(MotionEvent e) {
-                if(routeStops.size()<2){
+                Toast.makeText(MainActivity.this, "veuillez patienter svp.", Toast.LENGTH_SHORT).show();
+                if (routeStops.size() < 2) {
                     Point wgs84Point = (Point) GeometryEngine.project(mMapView.screenToLocation(new android.graphics.Point(Math.round(e.getX()), Math.round(e.getY()))), SpatialReferences.getWgs84());
-                    routeStops.add(new Stop(new Point(wgs84Point.getX(),wgs84Point.getY(), SpatialReferences.getWgs84())));
+                    routeStops.add(new Stop(new Point(wgs84Point.getX(), wgs84Point.getY(), SpatialReferences.getWgs84())));
                     setupSymbols();
-                }else {
+                } else {
                     Toast.makeText(MainActivity.this, "Le nombre maximum de stops est 2.", Toast.LENGTH_LONG).show();
                 }
                 return true;
             }
         });
 
-
-
         setupDrawer();
-
-
         mDirectionFab.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -264,12 +328,13 @@ public class MainActivity extends AppCompatActivity {
                                     e.printStackTrace();
                                 }
                                 mRouteParams.setStops(routeStops);
+                                mRouteParams.setReturnDirections(true);
                                 // set return directions as true to return turn-by-turn directions in the result of
                                 // getDirectionManeuvers().
                                 // solve
 
                                 RouteResult result = mRouteTask.solveRouteAsync(mRouteParams).get();
-
+                                mProgressDialog.cancel();
                                 mRouteSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 5);
 
                                 final List routes = result.getRoutes();
@@ -293,120 +358,41 @@ public class MainActivity extends AppCompatActivity {
                                 Log.d(TAG, directions.get(0).getGeometry().getExtent().getXMin() + "");
                                 Log.d(TAG, directions.get(0).getGeometry().getExtent().getYMin() + "");
 
+
                                 // Set the adapter for the list view
                                 mDrawerList.setAdapter(new ArrayAdapter<>(getApplicationContext(),
-                                        R.layout.directions_drawer, directionsArray));
-
+                                        R.layout.directions_layout, directionsArray));
                                 if (mProgressDialog.isShowing()) {
                                     mProgressDialog.dismiss();
                                 }
-                                mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                    @Override
-                                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                        if (mGraphicsOverlay.getGraphics().size() > 3) {
-                                            mGraphicsOverlay.getGraphics().remove(mGraphicsOverlay.getGraphics().size() - 1);
-                                        }
-                                        mDrawerLayout.closeDrawers();
-                                        DirectionManeuver dm = directions.get(position);
-                                        Geometry gm = dm.getGeometry();
-                                        Viewpoint vp = new Viewpoint(gm.getExtent(), 20);
-                                        mMapView.setViewpointAsync(vp, 3);
-                                        SimpleLineSymbol selectedRouteSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID,
-                                                Color.GREEN, 5);
-                                        Graphic selectedRouteGraphic = new Graphic(directions.get(position).getGeometry(),
-                                                selectedRouteSymbol);
-                                        mGraphicsOverlay.getGraphics().add(selectedRouteGraphic);
-                                    }
-                                });
 
+                                mDrawerList.setOnItemClickListener((parent, view, position, id) -> {
+
+                                    if (mGraphicsOverlay.getGraphics().size() > 3) {
+                                        mGraphicsOverlay.getGraphics().remove(mGraphicsOverlay.getGraphics().size() - 1);
+                                    }
+
+                                    mDrawerLayout.closeDrawers();
+                                    DirectionManeuver dm = directions.get(position);
+                                    Geometry gm = dm.getGeometry();
+                                    Viewpoint vp = new Viewpoint(gm.getExtent(), 20);
+                                    mMapView.setViewpointAsync(vp, 3);
+                                    SimpleLineSymbol selectedRouteSymbol = new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID,
+                                            Color.GREEN, 5);
+                                    Graphic selectedRouteGraphic = new Graphic(directions.get(position).getGeometry(),
+                                            selectedRouteSymbol);
+                                    mGraphicsOverlay.getGraphics().add(selectedRouteGraphic);
+                                });
+                                Toast.makeText(MainActivity.this, "Glisser votre doigt de gauche a droite pour afficher la feuille de route.", Toast.LENGTH_LONG).show();
                             }
                         } catch (Exception e) {
                             Log.e(TAG, e.getMessage());
+                            mProgressDialog.cancel();
+                            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     }
                 });
             }
         });
-    }
-
-
-
-
-
-    private void setupDrawer() {
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.drawer_open, R.string.drawer_close) {
-
-            /** Called when a drawer has settled in a completely open state. */
-            public void onDrawerOpened(View drawerView) {
-                super.onDrawerOpened(drawerView);
-                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-            }
-
-            /** Called when a drawer has settled in a completely closed state. */
-            public void onDrawerClosed(View view) {
-                super.onDrawerClosed(view);
-                invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
-            }
-        };
-
-        mDrawerToggle.setDrawerIndicatorEnabled(true);
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
-
-        mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-    }
-
-
-    private void setupSymbols() {
-
-        mGraphicsOverlay = new GraphicsOverlay();
-
-        //add the overlay to the map view
-        mMapView.getGraphicsOverlays().add(mGraphicsOverlay);
-
-        if(routeStops.size()==1) {
-            BitmapDrawable startDrawable = (BitmapDrawable) ContextCompat.getDrawable(this, R.drawable.ic_source);
-            final PictureMarkerSymbol pinSourceSymbol;
-            try {
-                pinSourceSymbol = PictureMarkerSymbol.createAsync(startDrawable).get();
-                pinSourceSymbol.loadAsync();
-                pinSourceSymbol.addDoneLoadingListener(new Runnable() {
-                    @Override
-                    public void run() {
-                        //add a new graphic as start point
-                        mSourcePoint = new Point(routeStops.get(0).getGeometry().getX(), routeStops.get(0).getGeometry().getY(), SpatialReferences.getWgs84());
-                        Graphic pinSourceGraphic = new Graphic(mSourcePoint, pinSourceSymbol);
-                        mGraphicsOverlay.getGraphics().add(pinSourceGraphic);
-                    }
-                });
-                pinSourceSymbol.setOffsetY(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-        }else if (routeStops.size()==2) {
-
-
-            BitmapDrawable endDrawable = (BitmapDrawable) ContextCompat.getDrawable(this, R.drawable.ic_destination);
-            final PictureMarkerSymbol pinDestinationSymbol;
-            try {
-                pinDestinationSymbol = PictureMarkerSymbol.createAsync(endDrawable).get();
-                pinDestinationSymbol.loadAsync();
-                pinDestinationSymbol.addDoneLoadingListener(new Runnable() {
-                    @Override
-                    public void run() {
-                        //add a new graphic as end point
-                        mDestinationPoint = new Point(routeStops.get(1).getGeometry().getX(), routeStops.get(1).getGeometry().getY(), SpatialReferences.getWgs84());
-                        Graphic destinationGraphic = new Graphic(mDestinationPoint, pinDestinationSymbol);
-                        mGraphicsOverlay.getGraphics().add(destinationGraphic);
-                    }
-                });
-                pinDestinationSymbol.setOffsetY(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
