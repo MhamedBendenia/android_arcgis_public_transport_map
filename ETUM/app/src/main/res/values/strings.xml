@@ -1,11 +1,10 @@
 <resources>
     <string name="app_name">ETUM</string>
-    <string name="location_permission_denied">Data could not open because WRITE permission was denied.</string>
-    <string name="navigation_vector">http://www.arcgis.com/sharing/rest/content/items/dcbbba0edf094eaa81af19298b9c6247/resources/styles/root.json</string>
+    <string name="location_permission_denied">Permission d'ecrire dans la memoire interne requise.</string>
     <!-- Drawer strings-->
-    <string name="drawer_open">Open navigation drawer</string>
-    <string name="drawer_close">Close navigation drawer</string>
+    <string name="drawer_open">Ouvrir la feuille de route</string>
+    <string name="drawer_close">Fermer la feuille de route</string>
 
-    <string name="progress_title">Finding Route</string>
-    <string name="progress_message">Please wait&#8230;</string>
+    <string name="progress_title">Recherche de trajet.</string>
+    <string name="progress_message">Veuillez patienter&#8230;</string>
 </resources>
