@@ -3,10 +3,12 @@ package com.pfe.musmed.etum;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -14,6 +16,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -79,14 +82,18 @@ public class MainActivity extends AppCompatActivity {
     private ListView mDrawerList;
 
 
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.directions_drawer);
 
         mMapView = findViewById(R.id.mapView);
-        ArcGISMap map = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 35.931488, 0.092265, 10);
+        ArcGISMap map = new ArcGISMap(Basemap.Type.TOPOGRAPHIC, 35.931488, 0.092265, 14);
         mMapView.setMap(map);
 
         boolean permissionCheck1 = ContextCompat.checkSelfPermission(MainActivity.this, reqPermissions[0]) == PackageManager.PERMISSION_GRANTED;
@@ -223,6 +230,9 @@ public class MainActivity extends AppCompatActivity {
                                     e.printStackTrace();
                                 }
                                 mRouteParams.setStops(routeStops);
+                                mRouteParams.setPreserveLastStop(true);
+                                mRouteParams.setPreserveFirstStop(true);
+                                mRouteParams.setFindBestSequence(true);
                                 mRouteParams.setReturnDirections(true);
                                 // set return directions as true to return turn-by-turn directions in the result of
                                 // getDirectionManeuvers().
@@ -343,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-    }
+        }
 
     private void setupSymbols() {
 
@@ -433,7 +443,6 @@ public class MainActivity extends AppCompatActivity {
             while ((entry = zis.getNextEntry()) != null) {
                 File file = new File(extractDir + entry.getName());
 
-
                 if (file.exists()) {
                     continue;
                 }
@@ -442,11 +451,8 @@ public class MainActivity extends AppCompatActivity {
                         file.mkdirs();
                     continue;
                 }
-
                 int count;
                 byte data[] = new byte[BUFFER];
-
-
                 FileOutputStream fos = new FileOutputStream(file);
                 dest = new BufferedOutputStream(fos, BUFFER);
                 while ((count = zis.read(data, 0, BUFFER)) != -1) {
