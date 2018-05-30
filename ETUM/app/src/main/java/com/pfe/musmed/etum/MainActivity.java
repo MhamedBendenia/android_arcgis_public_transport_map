@@ -66,7 +66,7 @@ import static android.view.View.OnLayoutChangeListener;
 public class MainActivity extends AppCompatActivity {
     private final String TAG = MainActivity.class.getSimpleName();
     String[] reqPermissions = new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission
-            .ACCESS_COARSE_LOCATION};
+            .ACCESS_COARSE_LOCATION,Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE};
     MapView mMapView;
     List<Stop> routeStops = new ArrayList<>();
     private int requestCode = 2;
@@ -127,8 +127,11 @@ public class MainActivity extends AppCompatActivity {
                         PackageManager.PERMISSION_GRANTED;
                 boolean permissionCheck2 = ContextCompat.checkSelfPermission(MainActivity.this, reqPermissions[1]) ==
                         PackageManager.PERMISSION_GRANTED;
-
-                if (!(permissionCheck1 && permissionCheck2)) {
+                boolean permissionCheck3 = ContextCompat.checkSelfPermission(MainActivity.this, reqPermissions[2]) ==
+                        PackageManager.PERMISSION_GRANTED;
+                boolean permissionCheck4 = ContextCompat.checkSelfPermission(MainActivity.this, reqPermissions[3]) ==
+                        PackageManager.PERMISSION_GRANTED;
+                if (!(permissionCheck1 && permissionCheck2 && permissionCheck3 && permissionCheck4)) {
                     // If permissions are not already granted, request permission from the user.
                     ActivityCompat.requestPermissions(MainActivity.this, reqPermissions, requestCode);
                 } else {
