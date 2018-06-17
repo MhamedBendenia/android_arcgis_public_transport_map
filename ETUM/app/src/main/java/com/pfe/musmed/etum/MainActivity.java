@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
         // get the MapView's LocationDisplay
         mLocationDisplay = mMapView.getLocationDisplay();
-
+        mLocationDisplay.setInitialZoomScale(100000);
 
         // Listen to changes in the status of the location data source.
         mLocationDisplay.addDataSourceStatusChangedListener(new LocationDisplay.DataSourceStatusChangedListener() {
@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     // Report other unknown failure types to the user - for example, location services may not
                     // be enabled on the device.
-                    String message = String.format("Erreur dans la source de données: %s", dataSourceStatusChangedEvent
+                    String message = String.format("Erreur dans la source: %s", dataSourceStatusChangedEvent
                             .getSource().getLocationDataSource().getError().getMessage());
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
 
@@ -194,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
 
         RouteTask mRouteTask = new RouteTask(getApplicationContext(), getFilesDir().getAbsolutePath() + "/default.geodatabase", "ETUM_ND");
 
-        Toast.makeText(MainActivity.this, "Tapez pour definir un point de depart.", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, "Tapez pour definir un point de depart.", Toast.LENGTH_SHORT).show();
         mMapView.setOnTouchListener(new DefaultMapViewOnTouchListener(this, mMapView) {
             @Override
             public boolean onSingleTapConfirmed(MotionEvent e) {
@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
                     routeStops.add(new Stop(new Point(wgs84Point.getX(), wgs84Point.getY(), SpatialReferences.getWgs84())));
                     setupSymbols();
                 } else {
-                    Toast.makeText(MainActivity.this, "Le nombre maximum de stops est 2.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Le nombre maximum de stops est 2.", Toast.LENGTH_SHORT).show();
                 }
                 return true;
             }
@@ -237,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
                                 mRouteParams.setPreserveFirstStop(true);
                                 mRouteParams.setFindBestSequence(true);
                                 mRouteParams.setReturnDirections(true);
-                                // set return directions as true to return turn-by-turn directions in the result of
+
                                 // getDirectionManeuvers().
                                 // solve
 
@@ -255,7 +255,6 @@ public class MainActivity extends AppCompatActivity {
                                 mGraphicsOverlay.getGraphics().add(routeGraphic);
 
                                 // get directions
-                                // NOTE: to get turn-by-turn directions Route Parameters should set returnDirection flag as true
                                 final List<DirectionManeuver> directions = mRoute.getDirectionManeuvers();
 
                                 String[] directionsArray = new String[directions.size()];
@@ -263,6 +262,9 @@ public class MainActivity extends AppCompatActivity {
                                 for (DirectionManeuver dm : directions) {
                                     directionsArray[i++] = dm.getDirectionText();
                                 }
+
+                                Toast.makeText(MainActivity.this, "Durée moyenne estimée: "+mRoute.getCost("Time")+" minutes", Toast.LENGTH_LONG).show();
+
                                 Log.d(TAG, directions.get(0).getGeometry().getExtent().getXMin() + "");
                                 Log.d(TAG, directions.get(0).getGeometry().getExtent().getYMin() + "");
 
@@ -291,7 +293,9 @@ public class MainActivity extends AppCompatActivity {
                                             selectedRouteSymbol);
                                     mGraphicsOverlay.getGraphics().add(selectedRouteGraphic);
                                 });
-                                Toast.makeText(MainActivity.this, "Glisser votre doigt de gauche a droite pour afficher la feuille de route.", Toast.LENGTH_LONG).show();
+
+                                mDrawerLayout.openDrawer(3,true);
+
                             }
                         } catch (Exception e) {
                             Log.e(TAG, e.getMessage());
@@ -386,7 +390,7 @@ public class MainActivity extends AppCompatActivity {
             } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-            Toast.makeText(MainActivity.this, "Taper pour definir un point de destination.", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "Taper pour definir un point de destination.", Toast.LENGTH_SHORT).show();
         } else if (routeStops.size() == 2) {
 
 
@@ -410,7 +414,7 @@ public class MainActivity extends AppCompatActivity {
             } catch (ExecutionException e) {
                 e.printStackTrace();
             }
-            Toast.makeText(MainActivity.this, "Cliquez sur le bouton en bas a droite pour calculer l'itinéraire.", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, "Cliquez sur le bouton en bas a droite pour calculer l'itinéraire.", Toast.LENGTH_SHORT).show();
         }
     }
 
